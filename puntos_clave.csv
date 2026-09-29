@@ -1,0 +1,14 @@
+Tipo,Indice,X (mm),Y (mm),Z (mm),Normal_X,Normal_Y,Normal_Z,Descripcion
+BoundingBox_Base,1,731,591,0,,,,Esquina Base 1
+BoundingBox_Base,2,690,-574,0,,,,Esquina Base 2
+BoundingBox_Base,3,-760,-524,0,,,,Esquina Base 3
+BoundingBox_Base,4,-719,641,0,,,,Esquina Base 4
+TouchingPoint,1,721,449,396,0.999,-0.034,0.0,Lateral Derecho (+X)
+TouchingPoint,2,-547,641,255,-0.034,-0.999,0.0,Frontal (+Y)
+TouchingPoint,3,-747,-399,0,-0.999,0.034,0.0,Lateral Izquierdo (-X)
+TouchingPoint,4,-166,-550,215,0.034,0.999,0.0,Trasero (-Y)
+TouchingPoint,5,-508,118,838,0.0,0.0,1.0,Superior (+Z)
+BoundingBox_3D_Top,1,731,591,835,,,,Esquina Superior 1 (Z=835mm)
+BoundingBox_3D_Top,2,690,-574,835,,,,Esquina Superior 2 (Z=835mm)
+BoundingBox_3D_Top,3,-760,-524,835,,,,Esquina Superior 3 (Z=835mm)
+BoundingBox_3D_Top,4,-719,641,835,,,,Esquina Superior 4 (Z=835mm)
