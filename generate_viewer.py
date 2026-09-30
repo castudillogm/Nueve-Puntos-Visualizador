@@ -1,4 +1,4 @@
-import json
+import json, shutil
 
 with open('embedded_data.json', 'r', encoding='utf-8') as f:
     embedded_str = f.read()
@@ -402,6 +402,14 @@ html_content = f'''<!DOCTYPE html>
         <div class="label">Orientación</div>
         <div class="value" id="val-rot">88.0 <span>°</span></div>
       </div>
+      <!-- Remontabilidad Badge -->
+      <div class="info-item" style="grid-column: span 2; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px;">
+        <div>
+          <div class="label">Remontabilidad (Stackable)</div>
+          <div id="val-stackable-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Criterio de apilado</div>
+        </div>
+        <div id="val-stackable-badge" class="badge" style="font-size: 11px; padding: 5px 10px; background: rgba(255, 0, 123, 0.18); color: var(--accent-magenta); border: 1px solid rgba(255, 0, 123, 0.4);">🚫 NO REMONTABLE</div>
+      </div>
     </div>
     <button id="btn-photos" style="margin-top: 12px; width: 100%;" onclick="togglePhotos()">
       📷 Ver Fotos de Cámaras
@@ -566,7 +574,6 @@ html_content = f'''<!DOCTYPE html>
     let pointCloudMaterial = null;
     let pointCloudObject = null;
 
-    // Master list of all points in current file
     let allPointsData = [];
     let currentFilteredVertices = [];
     let currentFilteredIntensities = [];
@@ -596,7 +603,6 @@ html_content = f'''<!DOCTYPE html>
       return {{ r, g, b }};
     }}
 
-    // Filter points by ground threshold and render
     function applyGroundFilter() {{
       const hideGround = document.getElementById('chk-hide-ground').checked;
       const cutZ = parseFloat(document.getElementById('rng-cut-z').value) || 0;
@@ -649,7 +655,6 @@ html_content = f'''<!DOCTYPE html>
       pointCloudObject = new THREE.Points(pointCloudGeometry, pointCloudMaterial);
       groupPoints.add(pointCloudObject);
 
-      // Update counter label
       if (hideGround) {{
         document.getElementById('pts-count').innerText = numPoints.toLocaleString() + ' (sin suelo)';
       }} else {{
@@ -831,6 +836,32 @@ html_content = f'''<!DOCTYPE html>
       document.getElementById('val-vol').innerHTML = (meta.volume || 0) + ' <span>L</span>';
       document.getElementById('val-weight').innerHTML = (meta.netWeight || 0) + ' <span>kg</span>';
       document.getElementById('val-rot').innerHTML = (meta.boxOrientation !== undefined ? meta.boxOrientation : 0) + ' <span>°</span>';
+
+      // Remontabilidad (non-stackable)
+      const isNonStackable = meta.nonStackable === 1 || meta.nonStackable === true || meta.nonStackable === '1';
+      const badge = document.getElementById('val-stackable-badge');
+      const desc = document.getElementById('val-stackable-desc');
+      if (badge && desc) {{
+        if (isNonStackable) {{
+          badge.innerText = '🚫 NO REMONTABLE';
+          badge.style.background = 'rgba(255, 0, 123, 0.18)';
+          badge.style.color = 'var(--accent-magenta)';
+          badge.style.borderColor = 'rgba(255, 0, 123, 0.4)';
+          if (meta.operatorNonStackable === 1) {{
+            desc.innerText = 'Definido por Operador (operatorNonStackable=1)';
+          }} else if (meta.combinedNonStackable) {{
+            desc.innerText = 'Carga Irregular detectada por sensor (non-stackable=1)';
+          }} else {{
+            desc.innerText = 'No apilable para transporte (non-stackable=1)';
+          }}
+        }} else {{
+          badge.innerText = '✅ REMONTABLE';
+          badge.style.background = 'rgba(0, 255, 170, 0.18)';
+          badge.style.color = 'var(--accent-green)';
+          badge.style.borderColor = 'rgba(0, 255, 170, 0.4)';
+          desc.innerText = 'Apto para colocar otra carga encima (non-stackable=0)';
+        }}
+      }}
     }}
 
     function setView(view) {{
@@ -928,6 +959,7 @@ html_content = f'''<!DOCTYPE html>
         currentData.boundingBox = pc.boundingBox || [];
         currentData.touchingPoints = pc.touchingPoints || [];
 
+        const rawNS = jsonObj['non-stackable'] !== undefined ? jsonObj['non-stackable'] : jsonObj.nonStackable;
         const meta = {{
           id: jsonObj.id || filename.replace(/\\.[^/.]+$/, ""),
           length: jsonObj.length || 0,
@@ -935,7 +967,10 @@ html_content = f'''<!DOCTYPE html>
           height: jsonObj.height || 0,
           volume: jsonObj.volume || 0,
           netWeight: jsonObj.netWeight || 0,
-          boxOrientation: jsonObj.boxOrientation || 0
+          boxOrientation: jsonObj.boxOrientation || 0,
+          nonStackable: rawNS !== undefined ? rawNS : 0,
+          operatorNonStackable: jsonObj.operatorNonStackable,
+          combinedNonStackable: jsonObj.combinedNonStackable
         }};
         updateTelemetryHUD(meta);
 
@@ -1018,6 +1053,9 @@ html_content = f'''<!DOCTYPE html>
     loadEmbeddedPoints();
     buildBoundingBox();
     buildKeyPoints();
+    if (currentData.metadata) {{
+      updateTelemetryHUD(currentData.metadata);
+    }}
     setView('iso');
 
     window.addEventListener('resize', () => {{
@@ -1040,4 +1078,5 @@ html_content = f'''<!DOCTYPE html>
 with open('visualizador_3d.html', 'w', encoding='utf-8') as f:
     f.write(html_content)
 
-print('Updated visualizador_3d.html with ground filter.')
+shutil.copyfile('visualizador_3d.html', 'index.html')
+print('Updated visualizador_3d.html and index.html with stackable indicator.')
