@@ -402,13 +402,10 @@ html_content = f'''<!DOCTYPE html>
         <div class="label">Orientación</div>
         <div class="value" id="val-rot">88.0 <span>°</span></div>
       </div>
-      <!-- Remontabilidad Badge -->
-      <div class="info-item" style="grid-column: span 2; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px;">
-        <div>
-          <div class="label">Remontabilidad (Stackable)</div>
-          <div id="val-stackable-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Criterio de apilado</div>
-        </div>
-        <div id="val-stackable-badge" class="badge" style="font-size: 11px; padding: 5px 10px; background: rgba(255, 0, 123, 0.18); color: var(--accent-magenta); border: 1px solid rgba(255, 0, 123, 0.4);">🚫 NO REMONTABLE</div>
+      <!-- Remontabilidad (Non-Stackable) -->
+      <div class="info-item" style="grid-column: span 2; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px;">
+        <span class="label" style="font-size: 13px; font-weight: 600; color: #fff;">Remontabilidad</span>
+        <div id="val-stackable-badge" class="badge" style="font-size: 12px; padding: 6px 14px; background: rgba(255, 0, 123, 0.18); color: var(--accent-magenta); border: 1px solid rgba(255, 0, 123, 0.4);">🚫 NO REMONTABLE</div>
       </div>
     </div>
     <button id="btn-photos" style="margin-top: 12px; width: 100%;" onclick="togglePhotos()">
@@ -837,29 +834,20 @@ html_content = f'''<!DOCTYPE html>
       document.getElementById('val-weight').innerHTML = (meta.netWeight || 0) + ' <span>kg</span>';
       document.getElementById('val-rot').innerHTML = (meta.boxOrientation !== undefined ? meta.boxOrientation : 0) + ' <span>°</span>';
 
-      // Remontabilidad (non-stackable)
+      // Remontabilidad: se evalúa únicamente non-stackable (1 = NO Remontable, 0 = Remontable)
       const isNonStackable = meta.nonStackable === 1 || meta.nonStackable === true || meta.nonStackable === '1';
       const badge = document.getElementById('val-stackable-badge');
-      const desc = document.getElementById('val-stackable-desc');
-      if (badge && desc) {{
+      if (badge) {{
         if (isNonStackable) {{
           badge.innerText = '🚫 NO REMONTABLE';
-          badge.style.background = 'rgba(255, 0, 123, 0.18)';
+          badge.style.background = 'rgba(255, 0, 123, 0.2)';
           badge.style.color = 'var(--accent-magenta)';
-          badge.style.borderColor = 'rgba(255, 0, 123, 0.4)';
-          if (meta.operatorNonStackable === 1) {{
-            desc.innerText = 'Definido por Operador (operatorNonStackable=1)';
-          }} else if (meta.combinedNonStackable) {{
-            desc.innerText = 'Carga Irregular detectada por sensor (non-stackable=1)';
-          }} else {{
-            desc.innerText = 'No apilable para transporte (non-stackable=1)';
-          }}
+          badge.style.borderColor = 'rgba(255, 0, 123, 0.45)';
         }} else {{
           badge.innerText = '✅ REMONTABLE';
-          badge.style.background = 'rgba(0, 255, 170, 0.18)';
+          badge.style.background = 'rgba(0, 255, 170, 0.2)';
           badge.style.color = 'var(--accent-green)';
-          badge.style.borderColor = 'rgba(0, 255, 170, 0.4)';
-          desc.innerText = 'Apto para colocar otra carga encima (non-stackable=0)';
+          badge.style.borderColor = 'rgba(0, 255, 170, 0.45)';
         }}
       }}
     }}
@@ -959,6 +947,7 @@ html_content = f'''<!DOCTYPE html>
         currentData.boundingBox = pc.boundingBox || [];
         currentData.touchingPoints = pc.touchingPoints || [];
 
+        // Leer campo non-stackable (1 = NO Remontable, 0 = Remontable)
         const rawNS = jsonObj['non-stackable'] !== undefined ? jsonObj['non-stackable'] : jsonObj.nonStackable;
         const meta = {{
           id: jsonObj.id || filename.replace(/\\.[^/.]+$/, ""),
@@ -968,9 +957,7 @@ html_content = f'''<!DOCTYPE html>
           volume: jsonObj.volume || 0,
           netWeight: jsonObj.netWeight || 0,
           boxOrientation: jsonObj.boxOrientation || 0,
-          nonStackable: rawNS !== undefined ? rawNS : 0,
-          operatorNonStackable: jsonObj.operatorNonStackable,
-          combinedNonStackable: jsonObj.combinedNonStackable
+          nonStackable: (rawNS === 1 || rawNS === true || rawNS === '1') ? 1 : 0
         }};
         updateTelemetryHUD(meta);
 
@@ -1079,4 +1066,4 @@ with open('visualizador_3d.html', 'w', encoding='utf-8') as f:
     f.write(html_content)
 
 shutil.copyfile('visualizador_3d.html', 'index.html')
-print('Updated visualizador_3d.html and index.html with stackable indicator.')
+print('Updated visualizador_3d.html and index.html (only non-stackable evaluated).')
